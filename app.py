@@ -9,6 +9,7 @@ from scipy.signal import spectrogram
 from scipy.ndimage import maximum_filter
 from collections import Counter
 import pickle
+import gzip 
 
 # ==========================================
 # 1. CORE PIPELINE & DATABASE LOGIC
@@ -63,11 +64,38 @@ def match_hashes(query_hashes, db):
     best_match_tuple, highest_score = match_counts.most_common(1)[0]
     return best_match_tuple[0], highest_score, best_match_tuple[1], matches
 
+
 @st.cache_resource
 def load_or_build_database(dataset_folder):
-    cache_path = "app_db_cache.pkl"
+    import gzip
+import pickle
+import glob
+import os
+import streamlit as st
+
+@st.cache_resource
+def load_or_build_database(dataset_folder):
+    # 1. Look for the chunked files we just created
+    chunk_files = sorted(glob.glob("db_chunk_*.bin"))
+    
+    if chunk_files:
+        print("Stitching database chunks together in memory...")
+        full_binary_data = b""
+        
+        # Read each piece and glue the bytes together
+        for chunk_file in chunk_files:
+            with open(chunk_file, "rb") as f:
+                full_binary_data += f.read()
+                
+        # Decompress the glued bytes and load the dictionary
+        return pickle.loads(gzip.decompress(full_binary_data))
+
+    # Notice we changed the file extension to .pkl.gz
+    cache_path = "app_db_cache.pkl.gz" 
+    
     if os.path.exists(cache_path):
-        with open(cache_path, 'rb') as f:
+        # We use gzip.open instead of standard open
+        with gzip.open(cache_path, 'rb') as f: 
             return pickle.load(f)
             
     song_db = {}
@@ -75,7 +103,6 @@ def load_or_build_database(dataset_folder):
     files = [f for f in glob.glob(search_pattern) if f.lower().endswith(('.wav', '.mp3'))]
     
     for filepath in files:
-        # STRIP EXTENSION HERE for the final prediction label
         song_name = os.path.splitext(os.path.basename(filepath))[0]
         fs, audio = load_audio(filepath)
         hashes, _, _, _, _ = fingerprint_song(fs, audio)
@@ -85,8 +112,10 @@ def load_or_build_database(dataset_folder):
                 song_db[hash_val] = []
             song_db[hash_val].append((song_name, t_db))
             
-    with open(cache_path, 'wb') as f:
+    # Save using gzip.open to compress it on the fly
+    with gzip.open(cache_path, 'wb') as f:
         pickle.dump(song_db, f)
+    
     return song_db
 
 # ==========================================
