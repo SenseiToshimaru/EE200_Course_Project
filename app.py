@@ -65,7 +65,7 @@ def match_hashes(query_hashes, db):
 
 @st.cache_resource
 def load_or_build_database(dataset_folder):
-    cache_path = "app_db_cache.pkl"
+    cache_path = "app_db_cache1.pkl"
     if os.path.exists(cache_path):
         with open(cache_path, 'rb') as f:
             return pickle.load(f)
@@ -97,7 +97,7 @@ st.set_page_config(page_title="Audio Identifier", layout="wide")
 st.title("🎵 Interactive Audio Identifier")
 
 # Initialize DB
-dataset_folder = "EE200 Project Song Database"
+dataset_folder = "EE200 Project Song Database1"
 with st.spinner("Loading Database..."):
     db = load_or_build_database(dataset_folder)
 st.sidebar.success(f"Database Active: {len(db)} unique hashes loaded.")
