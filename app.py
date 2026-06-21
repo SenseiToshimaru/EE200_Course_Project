@@ -97,7 +97,7 @@ st.set_page_config(page_title="Audio Identifier", layout="wide")
 st.title("🎵 Interactive Audio Identifier")
 
 # Initialize DB
-dataset_folder = "EE200 Project Song Database1"
+dataset_folder = "EE200 Project Song Database"
 with st.spinner("Loading Database..."):
     db = load_or_build_database(dataset_folder)
 st.sidebar.success(f"Database Active: {len(db)} unique hashes loaded.")
